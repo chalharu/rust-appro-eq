@@ -1,16 +1,16 @@
 [package]
-name = "nearly_eq"
-version = "0.2.4"
+name = "appro-eq"
+version = "0.1.0"
 authors = ["Mitsuharu Seki <mitsu1986@gmail.com>"]
-repository = "https://github.com/chalharu/rust-nearly-eq"
+repository = "https://github.com/chalharu/rust-appro-eq"
 keywords = ["assert", "array"]
 license = "MPL-2.0"
 readme = "README.md"
-description = "Nearly(Approximately) equal traits and assertion"
-documentation = "https://docs.rs/nearly_eq/"
+description = "Approximately equal traits and assertion"
+documentation = "https://docs.rs/appro-eq/"
 
 [lib]
-name = "nearly_eq"
+name = "appro_eq"
 bench = false
 test = true
 
@@ -38,10 +38,10 @@ version = ">=0.0.0"
 docs = ["complex", "rational", "ndarray", "i128"]
 i128 = []
 rational = ["num-rational", "num-integer", "num-traits"]
-complex = ["num-complex"]
+complex = ["num-complex", "num-traits"]
 
 [badges]
-travis-ci = { repository = "chalharu/rust-nearly-eq" }
+travis-ci = { repository = "chalharu/rust-appro-eq" }
 
 [package.metadata.docs.rs]
 features = ["docs"]
