@@ -9,24 +9,21 @@ use RelError;
 use ApproEqResult;
 use ApproEqError;
 
-fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(
-    iter: T,
-) -> ApproEqResult<D> {
-    iter.fold(Ok(None), move |m, i| if match (&m, &i) {
-        (&Err(_), _) => false,
-        (_, &Err(_)) => true,
-        (&Ok(ref m), &Ok(ref i)) => {
-            match (m, i) {
+fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(iter: T) -> ApproEqResult<D> {
+    iter.fold(Ok(None), move |m, i| {
+        if match (&m, &i) {
+            (&Err(_), _) => false,
+            (_, &Err(_)) => true,
+            (&Ok(ref m), &Ok(ref i)) => match (m, i) {
                 (&None, _) => true,
                 (_, &None) => false,
                 (&Some(ref m), &Some(ref i)) => i > m,
-            }
+            },
+        } {
+            i
+        } else {
+            m
         }
-    }
-    {
-        i
-    } else {
-        m
     })
 }
 
@@ -45,7 +42,11 @@ where
             }
         }
 
-        max(self.iter().zip(expected.iter()).map(move |(i, j)| i.abs_error(j)))
+        max(
+            self.iter()
+                .zip(expected.iter())
+                .map(move |(i, j)| i.abs_error(j)),
+        )
     }
 }
 
@@ -64,6 +65,10 @@ where
             }
         }
 
-        max(self.iter().zip(expected.iter()).map(move |(i, j)| i.rel_error(j)))
+        max(
+            self.iter()
+                .zip(expected.iter())
+                .map(move |(i, j)| i.rel_error(j)),
+        )
     }
 }

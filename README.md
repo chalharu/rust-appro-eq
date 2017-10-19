@@ -1,4 +1,5 @@
 # rust-appro-eq
+
 [![crates.io badge](https://img.shields.io/crates/v/appro-eq.svg)](https://crates.io/crates/appro-eq)
 [![Build Status](https://travis-ci.org/chalharu/rust-appro-eq.svg?branch=master)](https://travis-ci.org/chalharu/rust-appro-eq)
 [![docs.rs](https://docs.rs/appro-eq/badge.svg)](https://docs.rs/appro_eq)
@@ -7,6 +8,7 @@
 Implementing the `ApproEq` traits, Can asserts that the two expressions are approximately equal to each other.
 
 ## How-to Use
+
 See the [crate documentation](https://docs.rs/appro-eq/) for more details.
 
 ### Examples

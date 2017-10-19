@@ -22,7 +22,11 @@ impl<A: Integer + Clone> Tolerance for Ratio<A> {
 #[cfg_attr(feature = "docs", stable(feature = "num-rational", since = "0.1.0"))]
 impl<A: Integer + Clone> AbsError<Ratio<A>, Ratio<A>> for Ratio<A> {
     fn abs_error(&self, expected: &Ratio<A>) -> ApproEqResult<Ratio<A>> {
-        Ok(Some(if *self > *expected { self - expected } else { expected - self }))
+        Ok(Some(if *self > *expected {
+            self - expected
+        } else {
+            expected - self
+        }))
     }
 }
 
@@ -32,7 +36,13 @@ impl<A: Integer + Clone> RelError<Ratio<A>, Ratio<A>> for Ratio<A> {
         if *expected == Ratio::zero() {
             Err(ApproEqError::DividedByZero)
         } else {
-            Ok(Some((if *self > *expected { self - expected } else { expected - self }) / expected))
+            Ok(Some(
+                (if *self > *expected {
+                    self - expected
+                } else {
+                    expected - self
+                }) / expected,
+            ))
         }
     }
 }

@@ -8,7 +8,7 @@ use num_traits::Float;
 use AbsError;
 use RelError;
 use ApproEqResult;
-use std::ops::{Sub,Div};
+use std::ops::{Div, Sub};
 
 #[cfg_attr(feature = "docs", stable(feature = "num-complex", since = "0.1.0"))]
 impl<A, D: Float, B: AbsError<A, D>> AbsError<Complex<A>, D> for Complex<B> {
@@ -36,9 +36,11 @@ impl<A, D: Float, B: AbsError<A, D>> AbsError<Complex<A>, D> for Complex<B> {
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "num-complex", since = "0.1.0"))]
-impl<A: Float, D: Float + Div<A, Output=D>, B: Sub<A, Output=D> + Copy> RelError<Complex<A>, D> for Complex<B>
-{
+impl<A: Float, D: Float + Div<A, Output = D>, B: Sub<A, Output = D> + Copy> RelError<Complex<A>, D>
+    for Complex<B> {
     fn rel_error(&self, expected: &Complex<A>) -> ApproEqResult<D> {
-        Ok(Some(Complex::new(self.re - expected.re, self.im - expected.im).norm() / expected.norm()))
+        Ok(Some(
+            Complex::new(self.re - expected.re, self.im - expected.im).norm() / expected.norm(),
+        ))
     }
 }
