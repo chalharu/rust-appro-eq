@@ -289,6 +289,42 @@ impl RelError for f64 {
     }
 }
 
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl AbsError<f64, f32> for f32 {
+    fn abs_error(&self, expected: &f64) -> ApproEqResult<f32> {
+        Ok(Some(((*self as f64 - expected).abs() as f32)))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl RelError<f64, f32> for f32 {
+    fn rel_error(&self, expected: &f64) -> ApproEqResult<f32> {
+        if *expected == 0.0 {
+            Err(ApproEqError::DividedByZero)
+        } else {
+            Ok(Some(((*self as f64 - expected).abs() / expected) as f32))
+        }
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl AbsError<f32, f32> for f64 {
+    fn abs_error(&self, expected: &f32) -> ApproEqResult<f32> {
+        Ok(Some(((self - *expected as f64).abs() as f32)))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl RelError<f32, f32> for f64 {
+    fn rel_error(&self, expected: &f32) -> ApproEqResult<f32> {
+        if *expected == 0.0 {
+            Err(ApproEqError::DividedByZero)
+        } else {
+            Ok(Some(((self - *expected as f64).abs() / *expected as f64) as f32))
+        }
+    }
+}
+
 macro_rules! itype_impls {
     ($($T:ty)+) => {
         $(

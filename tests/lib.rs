@@ -191,6 +191,30 @@ panic_test_rel!(bad_compare_with_rel_div_zero_f32, 3f32, 0f32);
 panic_test_rel!(bad_compare_with_rel_div_zero_f64, 3f64, 0f64);
 
 ok_test_all!(
+    it_should_not_panic_if_values_are_appro_equal_f32_f64,
+    8f32,
+    8f64 + 1e-7
+);
+panic_test_all!(
+    it_should_panic_if_values_are_not_appro_equal_f32_f64,
+    8f32,
+    8f64 - 1e-5
+);
+panic_test_all!(bad_compare_with_explicit_eps_f32_f64, 3f32, 4f64, 1e-3f32);
+
+ok_test_all!(
+    it_should_not_panic_if_values_are_appro_equal_f64_f32,
+    8f64,
+    8f32 + 1e-7
+);
+panic_test_all!(
+    it_should_panic_if_values_are_not_appro_equal_f64_f32,
+    8f64,
+    8f32 - 1e-5
+);
+panic_test_all!(bad_compare_with_explicit_eps_f64_f32, 3f64, 4f32, 1e-3f32);
+
+ok_test_all!(
     compare_with_vector,
     vec![
         1f32,
@@ -446,4 +470,18 @@ panic_test_all!(
     bad_compare_with_ndarraynd,
     ArrayD::<f64>::zeros(IxDyn(&[2, 3, 4, 5, 6, 7])),
     ArrayD::<f64>::zeros(IxDyn(&[2, 3, 4, 5, 6]))
+);
+
+#[cfg(feature = "ndarray")]
+panic_test_rel!(
+    compare_with_ndarraynd_rel,
+    ArrayD::<f64>::zeros(IxDyn(&[2, 3, 4, 5, 6, 7])),
+    ArrayD::<f64>::zeros(IxDyn(&[2, 3, 4, 5, 6, 7]))
+);
+
+#[cfg(feature = "ndarray")]
+panic_test_all!(
+    bad_compare_with_ndarray3d_f32_f64,
+    arr3(&[[[1f32, 2.0], [4.0, 5.0]], [[6.0, 7.0], [9.0, 10.001]]]),
+    arr3(&[[[1f64, 2.0], [4.0, 5.0]], [[6.0, 7.0], [9.0, 10.0]]])
 );
