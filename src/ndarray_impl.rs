@@ -4,38 +4,71 @@
 //! http://mozilla.org/MPL/2.0/.
 
 use ndarray::{ArrayBase, Axis, Data, Dimension};
-use NearlyEq;
+use AbsError;
+use RelError;
+use ApproEqResult;
+use ApproEqError;
 
-#[cfg_attr(feature = "docs", stable(feature = "ndarray", since = "0.2.0"))]
-impl<A: Data, B, C: Data, D: Dimension> NearlyEq<ArrayBase<A, D>, B> for ArrayBase<C, D>
+fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(iter: T) -> ApproEqResult<D> {
+    iter.fold(Ok(None), move |m, i| {
+        if match (&m, &i) {
+            (&Err(_), _) => false,
+            (_, &Err(_)) => true,
+            (&Ok(ref m), &Ok(ref i)) => match (m, i) {
+                (&None, _) => true,
+                (_, &None) => false,
+                (&Some(ref m), &Some(ref i)) => i > m,
+            },
+        } {
+            i
+        } else {
+            m
+        }
+    })
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "ndarray", since = "0.1.0"))]
+impl<A: Data, B: PartialOrd, C: Data, D: Dimension> AbsError<ArrayBase<A, D>, B> for ArrayBase<C, D>
 where
-    C::Elem: NearlyEq<A::Elem, B> + Sized,
+    C::Elem: AbsError<A::Elem, B> + Sized,
 {
-    fn eps() -> B {
-        C::Elem::eps()
-    }
-
-    fn eq(&self, other: &ArrayBase<A, D>, eps: &B) -> bool {
-        if self.ndim() != other.ndim() {
-            return false;
+    fn abs_error(&self, expected: &ArrayBase<A, D>) -> ApproEqResult<B> {
+        if self.ndim() != expected.ndim() {
+            return Err(ApproEqError::LengthMismatch);
         }
         for n in 0..self.ndim() {
-            if self.len_of(Axis(n)) != other.len_of(Axis(n)) {
-                return false;
+            if self.len_of(Axis(n)) != expected.len_of(Axis(n)) {
+                return Err(ApproEqError::LengthMismatch);
             }
         }
 
-        let mut own = self.iter();
-        let mut other = other.iter();
+        max(
+            self.iter()
+                .zip(expected.iter())
+                .map(move |(i, j)| i.abs_error(j)),
+        )
+    }
+}
 
-        loop {
-            match (own.next(), other.next()) {
-                (None, None) => return true,
-                (None, _) | (_, None) => return false,
-                (Some(x), Some(y)) => if !x.eq(y, eps) {
-                    return false;
-                },
+#[cfg_attr(feature = "docs", stable(feature = "ndarray", since = "0.1.0"))]
+impl<A: Data, B: PartialOrd, C: Data, D: Dimension> RelError<ArrayBase<A, D>, B> for ArrayBase<C, D>
+where
+    C::Elem: RelError<A::Elem, B> + Sized,
+{
+    fn rel_error(&self, expected: &ArrayBase<A, D>) -> ApproEqResult<B> {
+        if self.ndim() != expected.ndim() {
+            return Err(ApproEqError::LengthMismatch);
+        }
+        for n in 0..self.ndim() {
+            if self.len_of(Axis(n)) != expected.len_of(Axis(n)) {
+                return Err(ApproEqError::LengthMismatch);
             }
         }
+
+        max(
+            self.iter()
+                .zip(expected.iter())
+                .map(move |(i, j)| i.rel_error(j)),
+        )
     }
 }

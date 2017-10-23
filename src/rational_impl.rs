@@ -6,25 +6,43 @@
 use num_rational::Ratio;
 use num_integer::Integer;
 use num_traits::identities::Zero;
-use NearlyEq;
+use AbsError;
+use RelError;
+use ApproEqResult;
+use ApproEqError;
+use Tolerance;
 
-#[cfg_attr(feature = "docs", stable(feature = "rational", since = "0.2.1"))]
-impl<A: Integer + Clone> NearlyEq<Ratio<A>, Ratio<A>> for Ratio<A> {
-    fn eps() -> Ratio<A> {
+#[cfg_attr(feature = "docs", stable(feature = "num-rational", since = "0.1.0"))]
+impl<A: Integer + Clone> Tolerance for Ratio<A> {
+    fn tolerance() -> Ratio<A> {
         Ratio::zero()
     }
+}
 
-    fn eq(&self, other: &Ratio<A>, eps: &Ratio<A>) -> bool {
-        let diff = if *self > *other {
-            self.clone() - other.clone()
+#[cfg_attr(feature = "docs", stable(feature = "num-rational", since = "0.1.0"))]
+impl<A: Integer + Clone> AbsError<Ratio<A>, Ratio<A>> for Ratio<A> {
+    fn abs_error(&self, expected: &Ratio<A>) -> ApproEqResult<Ratio<A>> {
+        Ok(Some(if *self > *expected {
+            self - expected
         } else {
-            other.clone() - self.clone()
-        };
+            expected - self
+        }))
+    }
+}
 
-        if *self == *other {
-            true
+#[cfg_attr(feature = "docs", stable(feature = "num-rational", since = "0.1.0"))]
+impl<A: Integer + Clone> RelError<Ratio<A>, Ratio<A>> for Ratio<A> {
+    fn rel_error(&self, expected: &Ratio<A>) -> ApproEqResult<Ratio<A>> {
+        if *expected == Ratio::zero() {
+            Err(ApproEqError::DividedByZero)
         } else {
-            diff < *eps
+            Ok(Some(
+                (if *self > *expected {
+                    self - expected
+                } else {
+                    expected - self
+                }) / expected,
+            ))
         }
     }
 }
