@@ -55,22 +55,16 @@ before_script:
 
 script:
 - cargo build --features="$FEATURES"
+- cargo test --no-run --features="$FEATURES"
+- cargo build --release --features="$FEATURES"
+- cargo test --release --no-run --features="$FEATURES"
 - |
   if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-    RUSTFLAGS='-C debug-assertions=off' cargo kcov --coveralls --features="$FEATURES"
-    RUSTFLAGS='-C debug-assertions=on' cargo kcov --coveralls --features="$FEATURES"
+    cargo kcov --coveralls --features="$FEATURES"
   else
-    RUSTFLAGS='-C debug-assertions=off' cargo test --features="$FEATURES"
-    RUSTFLAGS='-C debug-assertions=on' cargo test --features="$FEATURES"
+    cargo test --features="$FEATURES"
   fi
-- |
-  if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-    RUSTFLAGS='-C debug-assertions=off' cargo kcov --release --coveralls --features="$FEATURES"
-    RUSTFLAGS='-C debug-assertions=on' cargo kcov --release --coveralls --features="$FEATURES"
-  else
-    RUSTFLAGS='-C debug-assertions=off' cargo test --release --features="$FEATURES"
-    RUSTFLAGS='-C debug-assertions=on' cargo test --release --features="$FEATURES"
-  fi
+- cargo test --release --features="$FEATURES"
 - |
   if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
     cargo bench --verbose --features="$FEATURES"
@@ -98,10 +92,18 @@ after_success:
   fi
 
 env:
+  matrix:
+    - RUSTFLAGS="-C debug-assertions=on"
+    - RUSTFLAGS="-C debug-assertions=off"
   global:
-    secure: qwMSXpdCryGDyfiy1lXEcR/kWhATlQGVNAqV83n9uBKDLP6WsX4C25zMAz1/0wkjiorBMNFGhxMLI956md7V84sLX+6FNfA0tRODtAnJYyjR3AX4RkXB6zFhbTqWg/2BAefJ7Y7Vy0qKLKbqFq6023lKg09Mk80fEReba4PisrMgfj3LCCUarAnxfuFnAB7LmlvWXHNd3w+x6dV8fxO0Zw6QoqB9wQQvQzIiApqWCTyoxQhW+qzo6bXrctPct/OGNhmf4I0l1QJBGPN6qpFrxSjFljbxqIBiagCb6k1WERpok2FiNjhXCowUhTMyaGIlZLaVLjuISu8+aCyHZqK/yQLIDwWm5iY3Ko1gUbhvcg3aQV2ovpN8nxrQaiEkhg8mUPDPG0NencibFItb510L/VK3UkBWgTcKmwMjsqErh/l3a6UvezSAkUHrkMMAGLSrKnveFXeGCTwePLN40NgqJzuKsaSL+gqlTP7dHVtWpsBIvmrK7x4ItwWGRETYQR9HJQbeX+bxQSDJRpkuSTmY1iFL6GF1R0SNRYjXIeZ8Ei8F6O0RqUl7sWjMf9KEWD1LVkWj3X8eM+lTLyNSzP9BGlTP/Q34oJ2LKc4lYj59NE5ai4/rzfz0p8/ANoEJxUJoYgkdl90jw90UltPEjxD7YeCJ8WVhB4tp72qV44RtlDA=
+    secure: K76k+cWN808HPtLvgnUKQmOBlfjzzQJ0KZAJzffkn1JO2zBpmJwMiIZZKGbLk1N+lP4eGUSx0DBwytyo6owG/6KPtIHWp3WA1p6vpTMRAELwMLH+/AKFPBp43c+Rm3mMI3HKsN6IB2yOfsWwxEdBROLnRO+sT38BnHIuXBSW/UTNqg4lml3OAhui+oa1lR0BIcL1dkEuDjZdDSzWzrQAULgR3C4maaFVQoaVhZNpSlE8D1lHompghxvjFk5vzewERUJMbLe5uozkxdQNwcJMMB775l6p7kAvHIy/mEoDrOqOeSPMdr8bnr/DDS/asU992R5AONd6Ml4h83WJZGLk2NRF9E16LzE939i7imrrg8Zprs7J1S9NzfQIXH83YsJIQ2A+9fAvLwKDvfm0epgw5MZhNP538inrmUT0IXG5aqqlI5ISHzqLRUNmOO/VaxkpKQer0GuOBvReheh+h/6XizzGGsI6yLHiimQ8SQV0o10jBXi+Flo9hwxY3ZhbbNRSTaHGjawx/vkNraBlHCX6otRr2ewTodlsl46uM0J97j/eg2S4UUSiMHyyl4JhJQ5iJxNmZEsdLCzStrdFtGfAc4oA77NJVLjMRHSUxybokKeUBVbXuQ3MpNrdmjlKvg0o2oMFsYLI2AXoVfWxq8JVdDHtads1Lh302HsDDms0eTY=
 
 cache:
   cargo: true
   apt: true
   pip: true
+
+notifications:
+  email:
+    on_success: never
+    on_failure: always

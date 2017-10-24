@@ -1,7 +1,7 @@
-//! Trait for nearly equality comparisons.
+//! Trait for approximately equality comparisons.
 //!
 //! # Overview
-//! Implementing the `NearlyEq` traits, Can asserts that the two expressions are nearly(approximately) equal to each other.
+//! Implementing the `ApproEq` traits, Can asserts that the two expressions are approximately equal to each other.
 //!
 //! # Licensing
 //! This Source Code is subject to the terms of the Mozilla Public License
@@ -11,16 +11,17 @@
 //! # Examples
 //!
 //! ```rust
-//! # #[macro_use] extern crate nearly_eq;
+//! # #[macro_use] extern crate appro_eq;
 //! # fn main() {
-//! assert_nearly_eq!(1f64, 1.5f64, 0.6f64); // does not panic
-//! assert_nearly_eq!(0f64, 1e-12f64); // does not panic
+//! assert_appro_eq!(1f64, 1.5f64, 0.6f64); // does not panic
+//! assert_appro_eq!(0f64, 1e-12f64); // does not panic
+//! assert_appro_eq!(vec![0f64, 1.0, 0.0], vec![1e-12f64, 1.0, -1e-13f64]); // does not panic
 //! # }
 //! ```
 //! ```should_panic
-//! # #[macro_use] extern crate nearly_eq;
+//! # #[macro_use] extern crate appro_eq;
 //! # fn main() {
-//! assert_nearly_eq!(1f64, 2f64); // panics
+//! assert_appro_eq!(1f64, 2f64); // panics
 //! # }
 //! ```
 
@@ -58,59 +59,268 @@ mod rational_impl;
 mod ndarray_impl;
 
 use std::rc::{Rc, Weak};
-
 use std::sync::Arc;
-
 use std::cell::{Cell, RefCell};
 
-/// Trait for nearly(approximately) equality comparisons.
+use std::error;
+use std::fmt;
+
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-pub trait NearlyEq<Rhs: ?Sized = Self, Diff: ?Sized = Self> {
-    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-    fn eps() -> Diff;
+type ApproEqResult<D> = Result<Option<D>, ApproEqError>;
 
-    /// This method tests for self and other values to be nearly(approximately) equal.
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+#[derive(Debug)]
+pub enum ApproEqError {
     #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-    fn eq(&self, other: &Rhs, eps: &Diff) -> bool;
-
-    /// This method tests for not nearly(approximately) equal.
-    #[inline]
+    LengthMismatch,
     #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-    fn ne(&self, other: &Rhs, eps: &Diff) -> bool {
-        !self.eq(other, eps)
-    }
+    NonNumDifference,
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    DividedByZero,
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-impl NearlyEq for f32 {
-    fn eps() -> f32 {
-        1e-6
-    }
-
-    fn eq(&self, other: &f32, eps: &f32) -> bool {
-        let diff = (*self - *other).abs();
-
-        if *self == *other {
-            true
-        } else {
-            diff < *eps
+impl fmt::Display for ApproEqError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &ApproEqError::LengthMismatch => write!(f, "length mismatch"),
+            &ApproEqError::NonNumDifference => write!(f, "non num difference"),
+            &ApproEqError::DividedByZero => write!(f, "divided by zero"),
         }
     }
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-impl NearlyEq for f64 {
-    fn eps() -> f64 {
-        1e-11
+impl error::Error for ApproEqError {
+    fn description(&self) -> &str {
+        match self {
+            &ApproEqError::LengthMismatch => "length mismatch",
+            &ApproEqError::NonNumDifference => "non num difference",
+            &ApproEqError::DividedByZero => "divided by zero",
+        }
     }
 
-    fn eq(&self, other: &f64, eps: &f64) -> bool {
-        let diff = (*self - *other).abs();
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            &ApproEqError::LengthMismatch => None,
+            &ApproEqError::NonNumDifference => None,
+            &ApproEqError::DividedByZero => None,
+        }
+    }
+}
 
-        if *self == *other {
-            true
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait RelError<Rhs: ?Sized = Self, Diff = Self> {
+    /// This method tests for self(actual value) and expected values to be relative error.
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn rel_error(&self, expected: &Rhs) -> ApproEqResult<Diff>;
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait AbsError<Rhs: ?Sized = Self, Diff = Self> {
+    /// This method tests for self(actual value) and expected values to be absolute error.
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn abs_error(&self, expected: &Rhs) -> ApproEqResult<Diff>;
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait Tolerance<Diff = Self> {
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn tolerance() -> Diff;
+}
+
+/// Trait for approximately equality comparisons.
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait AbsApproEqWithTol<Rhs: ?Sized = Self, Diff = Self> {
+    /// This method tests for approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn abs_appro_eq_with_tol(&self, other: &Rhs, tol: &Diff) -> bool;
+
+    /// This method tests for not approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn abs_appro_ne_with_tol(&self, other: &Rhs, tol: &Diff) -> bool {
+        !self.abs_appro_eq_with_tol(other, tol)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<Rhs, Diff: PartialOrd, T: AbsError<Rhs, Diff>> AbsApproEqWithTol<Rhs, Diff> for T {
+    fn abs_appro_eq_with_tol(&self, other: &Rhs, tol: &Diff) -> bool {
+        match self.abs_error(other) {
+            Ok(ref val) => {
+                match val {
+                    &Some(ref val) => val <= tol,
+                    &None => true,
+                }
+            }
+            Err(_) => false,
+        }
+    }
+}
+
+/// Trait for approximately equality comparisons.
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait AbsApproEq<Rhs: ?Sized = Self, Diff = Self> {
+    /// This method tests for approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn abs_appro_eq(&self, other: &Rhs) -> bool;
+
+    /// This method tests for not approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn appro_ne_abs(&self, other: &Rhs) -> bool {
+        !self.abs_appro_eq(other)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<Rhs, Diff: PartialOrd + Tolerance<Diff>, T: AbsApproEqWithTol<Rhs, Diff>> AbsApproEq<Rhs, Diff>
+    for T {
+    fn abs_appro_eq(&self, other: &Rhs) -> bool {
+        self.abs_appro_eq_with_tol(other, &Diff::tolerance())
+    }
+}
+
+/// Trait for approximately equality comparisons.
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait RelApproEqWithTol<Rhs: ?Sized = Self, Diff = Self> {
+    /// This method tests for approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn rel_appro_eq_with_tol(&self, other: &Rhs, tol: &Diff) -> bool;
+
+    /// This method tests for not approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn appro_ne_rel_with_tol(&self, other: &Rhs, tol: &Diff) -> bool {
+        !self.rel_appro_eq_with_tol(other, tol)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<Rhs, Diff: PartialOrd, T: RelError<Rhs, Diff>> RelApproEqWithTol<Rhs, Diff> for T {
+    fn rel_appro_eq_with_tol(&self, other: &Rhs, tol: &Diff) -> bool {
+        match self.rel_error(other) {
+            Ok(ref val) => {
+                match val {
+                    &Some(ref val) => val <= tol,
+                    &None => true,
+                }
+            }
+            Err(_) => false,
+        }
+    }
+}
+
+/// Trait for approximately equality comparisons.
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+pub trait RelApproEq<Rhs: ?Sized = Self, Diff = Self> {
+    /// This method tests for approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn rel_appro_eq(&self, other: &Rhs) -> bool;
+
+    /// This method tests for not approximately equal.
+    #[inline]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+    fn rel_appro_ne(&self, other: &Rhs) -> bool {
+        !self.rel_appro_eq(other)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<Rhs, Diff: PartialOrd + Tolerance<Diff>, T: RelApproEqWithTol<Rhs, Diff>> RelApproEq<Rhs, Diff>
+    for T {
+    fn rel_appro_eq(&self, other: &Rhs) -> bool {
+        self.rel_appro_eq_with_tol(other, &Diff::tolerance())
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl Tolerance for f32 {
+    fn tolerance() -> f32 {
+        1e-6
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl AbsError for f32 {
+    fn abs_error(&self, expected: &f32) -> ApproEqResult<f32> {
+        Ok(Some(((self - expected).abs())))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl RelError for f32 {
+    fn rel_error(&self, expected: &f32) -> ApproEqResult<f32> {
+        if *expected == 0.0 {
+            Err(ApproEqError::DividedByZero)
         } else {
-            diff < *eps
+            Ok(Some((self - expected).abs() / expected))
+        }
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl Tolerance for f64 {
+    fn tolerance() -> f64 {
+        1e-11
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl AbsError for f64 {
+    fn abs_error(&self, expected: &f64) -> ApproEqResult<f64> {
+        Ok(Some((self - expected).abs()))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl RelError for f64 {
+    fn rel_error(&self, expected: &f64) -> ApproEqResult<f64> {
+        if *expected == 0.0 {
+            Err(ApproEqError::DividedByZero)
+        } else {
+            Ok(Some((self - expected).abs() / expected))
+        }
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl AbsError<f64, f32> for f32 {
+    fn abs_error(&self, expected: &f64) -> ApproEqResult<f32> {
+        Ok(Some(((*self as f64 - expected).abs() as f32)))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl RelError<f64, f32> for f32 {
+    fn rel_error(&self, expected: &f64) -> ApproEqResult<f32> {
+        if *expected == 0.0 {
+            Err(ApproEqError::DividedByZero)
+        } else {
+            Ok(Some(((*self as f64 - expected).abs() / expected) as f32))
+        }
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl AbsError<f32, f32> for f64 {
+    fn abs_error(&self, expected: &f32) -> ApproEqResult<f32> {
+        Ok(Some(((self - *expected as f64).abs() as f32)))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl RelError<f32, f32> for f64 {
+    fn rel_error(&self, expected: &f32) -> ApproEqResult<f32> {
+        if *expected == 0.0 {
+            Err(ApproEqError::DividedByZero)
+        } else {
+            Ok(Some(((self - *expected as f64).abs() / *expected as f64) as f32))
         }
     }
 }
@@ -118,19 +328,27 @@ impl NearlyEq for f64 {
 macro_rules! itype_impls {
     ($($T:ty)+) => {
         $(
-            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
-            impl NearlyEq for $T {
-                fn eps() -> $T {
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl Tolerance for $T {
+                fn tolerance() -> $T {
                     0
                 }
+            }
 
-                fn eq(&self, other: &$T, eps: &$T) -> bool {
-                    let diff = (*self - *other).abs();
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl AbsError for $T {
+                fn abs_error(&self, expected: &$T) -> ApproEqResult<$T> {
+                    Ok(Some((self - expected).abs()))
+                }
+            }
 
-                    if *self == *other {
-                        true
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl RelError for $T {
+                fn rel_error(&self, expected: &$T) -> ApproEqResult<$T> {
+                    if *expected == 0 as $T {
+                        Err(ApproEqError::DividedByZero)
                     } else {
-                        diff < *eps
+                        Ok(Some((self - expected).abs() / expected))
                     }
                 }
             }
@@ -146,19 +364,27 @@ itype_impls! { i128 }
 macro_rules! utype_impls {
     ($($T:ty)+) => {
         $(
-            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
-            impl NearlyEq for $T {
-                fn eps() -> $T {
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl Tolerance for $T {
+                fn tolerance() -> $T {
                     0
                 }
+            }
 
-                fn eq(&self, other: &$T, eps: &$T) -> bool {
-                    let diff = if *self > *other { *self - *other } else { *other - *self };
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl AbsError for $T {
+                fn abs_error(&self, expected: &$T) -> ApproEqResult<$T> {
+                    Ok(Some(if *self > *expected { *self - *expected } else { *expected - *self }))
+                }
+            }
 
-                    if *self == *other {
-                        true
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl RelError for $T {
+                fn rel_error(&self, expected: &$T) -> ApproEqResult<$T> {
+                    if *expected == 0 as $T {
+                        Err(ApproEqError::DividedByZero)
                     } else {
-                        diff < *eps
+                        Ok(Some((if *self > *expected { *self - *expected } else { *expected - *self }) / expected))
                     }
                 }
             }
@@ -171,65 +397,82 @@ utype_impls! { u8 u16 u32 u64 }
 #[cfg(feature = "i128")]
 utype_impls! { u128 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-impl<A, B, C: NearlyEq<A, B>> NearlyEq<[A], B> for [C] {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &[A], eps: &B) -> bool {
-        if self.len() != other.len() {
-            false
-        } else {
-            for i in 0..self.len() {
-                if self[i].ne(&other[i], eps) {
-                    return false;
-                }
+fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(
+    iter: T,
+) -> ApproEqResult<D> {
+    iter.fold(Ok(None), move |m, i| if match (&m, &i) {
+        (&Err(_), _) => false,
+        (_, &Err(_)) => true,
+        (&Ok(ref m), &Ok(ref i)) => {
+            match (m, i) {
+                (&None, _) => true,
+                (_, &None) => false,
+                (&Some(ref m), &Some(ref i)) => i > m,
             }
-            true
+        }
+    }
+    {
+        i
+    } else {
+        m
+    })
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A, D: PartialOrd, B: AbsError<A, D>> AbsError<[A], D> for [B] {
+    fn abs_error(&self, expected: &[A]) -> ApproEqResult<D>{
+        if self.len() != expected.len() {
+            Err(ApproEqError::LengthMismatch)
+        } else {
+            max((0..self.len()).map(|i| self[i].abs_error(&expected[i])))
         }
     }
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-impl<A, B, C: NearlyEq<A, B>> NearlyEq<Vec<A>, B> for Vec<C> {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &Vec<A>, eps: &B) -> bool {
-        if self.len() != other.len() {
-            false
+impl<A, D: PartialOrd, B: RelError<A, D>> RelError<[A], D> for [B] {
+    fn rel_error(&self, expected: &[A]) -> ApproEqResult<D>{
+        if self.len() != expected.len() {
+            Err(ApproEqError::LengthMismatch)
         } else {
-            for i in 0..self.len() {
-                if self[i].ne(&other[i], eps) {
-                    return false;
-                }
-            }
-            true
+            max((0..self.len()).map(|i| self[i].rel_error(&expected[i])))
         }
     }
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-impl<'a, A: ?Sized, B, C: NearlyEq<A, B> + ?Sized> NearlyEq<A, B> for &'a C {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &A, eps: &B) -> bool {
-        (**self).eq(&other, eps)
+impl<A, D: PartialOrd, B: AbsError<A, D>> AbsError<Vec<A>, D> for Vec<B> {
+    fn abs_error(&self, expected: &Vec<A>) -> ApproEqResult<D>{
+        if self.len() != expected.len() {
+            Err(ApproEqError::LengthMismatch)
+        } else {
+            max((0..self.len()).map(|i| self[i].abs_error(&expected[i])))
+        }
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
-impl<'a, A: ?Sized, B, C: NearlyEq<A, B> + ?Sized> NearlyEq<A, B> for &'a mut C {
-    fn eps() -> B {
-        C::eps()
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A, D: PartialOrd, B: RelError<A, D>> RelError<Vec<A>, D> for Vec<B> {
+    fn rel_error(&self, expected: &Vec<A>) -> ApproEqResult<D>{
+        if self.len() != expected.len() {
+            Err(ApproEqError::LengthMismatch)
+        } else {
+            max((0..self.len()).map(|i| self[i].rel_error(&expected[i])))
+        }
     }
+}
 
-    fn eq(&self, other: &A, eps: &B) -> bool {
-        (**self).eq(&other, eps)
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<'a, A: ?Sized, D: PartialOrd, B: AbsError<A, D> + ?Sized> AbsError<&'a A, D> for &'a B {
+    fn abs_error(&self, expected: &&A) -> ApproEqResult<D>{
+        (*self).abs_error(expected)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<'a, A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<&'a A, D> for &'a B {
+    fn rel_error(&self, expected: &&A) -> ApproEqResult<D>{
+        (*self).rel_error(expected)
     }
 }
 
@@ -237,18 +480,16 @@ macro_rules! array_impls {
     ($($N:expr)+) => {
         $(
             #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-            impl<A, B, C: NearlyEq<A, B>> NearlyEq<[A; $N], B> for [C; $N] {
-                fn eps() -> B {
-                    C::eps()
+            impl<A, D: PartialOrd, B: AbsError<A, D>> AbsError<[A; $N], D> for [B; $N] {
+                fn abs_error(&self, expected: &[A; $N]) -> ApproEqResult<D>{
+                    max((0..self.len()).map(|i| self[i].abs_error(&expected[i])))
                 }
+            }
 
-                fn eq(&self, other: &[A; $N], eps: &B) -> bool {
-                    for i in 0..$N {
-                        if self[i].ne(&other[i], eps) {
-                            return false;
-                        }
-                    }
-                    true
+            #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+            impl<A, D: PartialOrd, B: RelError<A, D>> RelError<[A; $N], D> for [B; $N] {
+                fn rel_error(&self, expected: &[A; $N]) -> ApproEqResult<D>{
+                    max((0..self.len()).map(|i| self[i].rel_error(&expected[i])))
                 }
             }
         )+
@@ -262,73 +503,95 @@ array_impls! {
     30 31 32
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.1"))]
-impl<A, B, C: NearlyEq<A, B>> NearlyEq<Option<A>, B> for Option<C> {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &Option<A>, eps: &B) -> bool {
-            match (self, other) {
-                (&None, &None) => return true,
-                (&None, _) | (_, &None) => return false,
-                (&Some(ref x), &Some(ref y)) => x.eq(y, eps),
-            }
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A, D, B: AbsError<A, D>> AbsError<Option<A>, D> for Option<B> {
+    fn abs_error(&self, expected: &Option<A>) -> ApproEqResult<D>{
+        match (self, expected) {
+            (&None, &None) => Ok(None),
+            (&None, _) | (_, &None) => Err(ApproEqError::NonNumDifference),
+            (&Some(ref x), &Some(ref y)) => x.abs_error(y),
+        }
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.2"))]
-impl<A, B, C: NearlyEq<A, B>> NearlyEq<Rc<A>, B> for Rc<C> {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &Rc<A>, eps: &B) -> bool {
-        self.as_ref().eq(other, eps)
-    }
-}
-
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.2"))]
-impl<A, B, C: NearlyEq<A, B>> NearlyEq<Arc<A>, B> for Arc<C> {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &Arc<A>, eps: &B) -> bool {
-        self.as_ref().eq(other, eps)
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A, D, B: RelError<A, D>> RelError<Option<A>, D> for Option<B> {
+    fn rel_error(&self, expected: &Option<A>) -> ApproEqResult<D>{
+        match (self, expected) {
+            (&None, &None) => Ok(None),
+            (&None, _) | (_, &None) => Err(ApproEqError::NonNumDifference),
+            (&Some(ref x), &Some(ref y)) => x.rel_error(y),
+        }
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.2"))]
-impl<A, B, C: NearlyEq<A, B>> NearlyEq<Weak<A>, B> for Weak<C> {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &Weak<A>, eps: &B) -> bool {
-        self.upgrade().eq(&other.upgrade(), eps)
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: AbsError<A, D> + ?Sized> AbsError<Rc<A>, D> for Rc<B> {
+    fn abs_error(&self, expected: &Rc<A>) -> ApproEqResult<D>{
+        self.as_ref().abs_error(expected)
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.2"))]
-impl<A: Copy + ?Sized, B, C: NearlyEq<A, B> +  Copy + ?Sized> NearlyEq<Cell<A>, B> for Cell<C> {
-    fn eps() -> B {
-        C::eps()
-    }
-
-    fn eq(&self, other: &Cell<A>, eps: &B) -> bool {
-        (*self).get().eq(&(*other).get(), eps)
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<Rc<A>, D> for Rc<B> {
+    fn rel_error(&self, expected: &Rc<A>) -> ApproEqResult<D>{
+        self.as_ref().rel_error(expected)
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.2"))]
-impl<A: ?Sized, B, C: NearlyEq<A, B> + ?Sized> NearlyEq<RefCell<A>, B> for RefCell<C> {
-    fn eps() -> B {
-        C::eps()
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: AbsError<A, D> + ?Sized> AbsError<Arc<A>, D> for Arc<B> {
+    fn abs_error(&self, expected: &Arc<A>) -> ApproEqResult<D>{
+        self.as_ref().abs_error(expected)
     }
+}
 
-    fn eq(&self, other: &RefCell<A>, eps: &B) -> bool {
-        (*self).borrow().eq(&(*other).borrow(), eps)
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<Arc<A>, D> for Arc<B> {
+    fn rel_error(&self, expected: &Arc<A>) -> ApproEqResult<D>{
+        self.as_ref().rel_error(expected)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: AbsError<A, D> + ?Sized> AbsError<Weak<A>, D> for Weak<B> {
+    fn abs_error(&self, expected: &Weak<A>) -> ApproEqResult<D>{
+        self.upgrade().abs_error(&expected.upgrade())
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<Weak<A>, D> for Weak<B> {
+    fn rel_error(&self, expected: &Weak<A>) -> ApproEqResult<D>{
+        self.upgrade().rel_error(&expected.upgrade())
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: Copy + ?Sized, D: PartialOrd, B: AbsError<A, D> + Copy + ?Sized> AbsError<Cell<A>, D> for Cell<B> {
+    fn abs_error(&self, expected: &Cell<A>) -> ApproEqResult<D>{
+        (*self).get().abs_error(&(*expected).get())
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: Copy + ?Sized, D: PartialOrd, B: RelError<A, D> + Copy + ?Sized> RelError<Cell<A>, D> for Cell<B> {
+    fn rel_error(&self, expected: &Cell<A>) -> ApproEqResult<D>{
+        (*self).get().rel_error(&(*expected).get())
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: AbsError<A, D> + ?Sized> AbsError<RefCell<A>, D> for RefCell<B> {
+    fn abs_error(&self, expected: &RefCell<A>) -> ApproEqResult<D>{
+        (*self).borrow().abs_error(&(*expected).borrow())
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
+impl<A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<RefCell<A>, D> for RefCell<B> {
+    fn rel_error(&self, expected: &RefCell<A>) -> ApproEqResult<D>{
+        (*self).borrow().rel_error(&(*expected).borrow())
     }
 }
 
