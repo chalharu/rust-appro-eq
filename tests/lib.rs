@@ -24,6 +24,7 @@ use ndarray::{ArrayD, IxDyn, arr1, arr2, arr3};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::cell::{Cell, RefCell};
+use std::time::{Duration, Instant, SystemTime};
 
 macro_rules! panic_test_rel {
     ($name:ident, $($arg:tt)*) => (
@@ -484,4 +485,56 @@ panic_test_all!(
     bad_compare_with_ndarray3d_f32_f64,
     arr3(&[[[1f32, 2.0], [4.0, 5.0]], [[6.0, 7.0], [9.0, 10.001]]]),
     arr3(&[[[1f64, 2.0], [4.0, 5.0]], [[6.0, 7.0], [9.0, 10.0]]])
+);
+
+ok_test_none!(
+    compare_with_systemtime_none,
+    SystemTime::now(),
+    SystemTime::now()
+);
+
+ok_test_abs!(
+    compare_with_systemtime_abs,
+    SystemTime::now(),
+    SystemTime::now()
+);
+
+panic_test_none!(
+    bad_compare_with_systemtime_none,
+    SystemTime::now() - Duration::new(10, 0),
+    SystemTime::now()
+);
+
+panic_test_abs!(
+    bad_compare_with_systemtime_abs,
+    SystemTime::now() - Duration::new(10, 0),
+    SystemTime::now()
+);
+
+ok_test_abs!(compare_with_instant_abs, Instant::now(), Instant::now());
+
+ok_test_none!(compare_with_instant_none, Instant::now(), Instant::now());
+
+panic_test_abs!(
+    bad_compare_with_instant_abs,
+    Instant::now() - Duration::new(10, 0),
+    Instant::now()
+);
+
+panic_test_none!(
+    bad_compare_with_instant_none,
+    Instant::now() - Duration::new(10, 0),
+    Instant::now()
+);
+
+ok_test_all!(
+    compare_with_duration,
+    Duration::new(10, 0),
+    Duration::new(10, 1)
+);
+
+panic_test_all!(
+    bad_compare_with_duration,
+    Duration::new(9, 0),
+    Duration::new(10, 1)
 );
