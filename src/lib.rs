@@ -81,7 +81,10 @@ pub enum ApproEqError {
     #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
     Overflow,
     #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
-    ComponentError(Box<error::Error>),
+    ComponentError(
+        #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+        Box<error::Error>
+    ),
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
