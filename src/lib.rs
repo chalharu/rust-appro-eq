@@ -61,6 +61,7 @@ mod ndarray_impl;
 use std::rc::{Rc, Weak};
 use std::sync::Arc;
 use std::cell::{Cell, RefCell};
+use std::time::{Duration, Instant, SystemTime};
 
 use std::error;
 use std::fmt;
@@ -77,16 +78,16 @@ pub enum ApproEqError {
     NonNumDifference,
     #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
     DividedByZero,
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+    Overflow,
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+    ComponentError(Box<error::Error>),
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl fmt::Display for ApproEqError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            &ApproEqError::LengthMismatch => write!(f, "length mismatch"),
-            &ApproEqError::NonNumDifference => write!(f, "non num difference"),
-            &ApproEqError::DividedByZero => write!(f, "divided by zero"),
-        }
+        write!(f, "{}", error::Error::description(self))
     }
 }
 
@@ -97,15 +98,13 @@ impl error::Error for ApproEqError {
             &ApproEqError::LengthMismatch => "length mismatch",
             &ApproEqError::NonNumDifference => "non num difference",
             &ApproEqError::DividedByZero => "divided by zero",
+            &ApproEqError::Overflow => "overflow",
+            &ApproEqError::ComponentError(ref err) => err.description()
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        match self {
-            &ApproEqError::LengthMismatch => None,
-            &ApproEqError::NonNumDifference => None,
-            &ApproEqError::DividedByZero => None,
-        }
+        None
     }
 }
 
@@ -595,3 +594,46 @@ impl<A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<RefCell<A>, 
     }
 }
 
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+impl Tolerance for Duration {
+    fn tolerance() -> Duration {
+        Duration::new(0, 1000000)
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+impl AbsError<Instant, Duration> for Instant {
+    fn abs_error(&self, expected: &Instant) -> ApproEqResult<Duration> {
+        Ok(Some(if *self > *expected { *self - *expected } else { *expected - *self }))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+impl AbsError<SystemTime, Duration> for SystemTime {
+    fn abs_error(&self, expected: &SystemTime) -> ApproEqResult<Duration> {
+        match if *self > *expected { self.duration_since(*expected) } else { expected.duration_since(*self) } {
+            Ok(v) => Ok(Some(v)),
+            Err(e) => Err(ApproEqError::ComponentError(Box::new(e) as Box<error::Error>)),
+        }
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+impl AbsError for Duration {
+    fn abs_error(&self, expected: &Duration) -> ApproEqResult<Duration> {
+        Ok(Some(if *self > *expected { *self - *expected } else { *expected - *self }))
+    }
+}
+
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+impl RelError for Duration {
+    fn rel_error(&self, expected: &Duration) -> ApproEqResult<Duration> {
+        if *expected == Duration::new(0, 0) {
+            Err(ApproEqError::DividedByZero)
+        } else if expected.as_secs() > std::u32::MAX as u64 {
+            Err(ApproEqError::DividedByZero)
+        } else {
+            Ok(Some((if *self > *expected { *self - *expected } else { *expected - *self }) / expected.as_secs() as u32))
+        }
+    }
+}
