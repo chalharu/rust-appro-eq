@@ -278,7 +278,7 @@ impl Tolerance for f32 {
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsError for f32 {
     fn abs_error(&self, expected: &f32) -> ApproEqResult<f32> {
-        Ok(Some(((self - expected).abs())))
+        Ok(Some((self - expected).abs()))
     }
 }
 
@@ -322,7 +322,7 @@ impl RelError for f64 {
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsError<f64, f32> for f32 {
     fn abs_error(&self, expected: &f64) -> ApproEqResult<f32> {
-        Ok(Some(((*self as f64 - expected).abs() as f32)))
+        Ok(Some((*self as f64 - expected).abs() as f32))
     }
 }
 
@@ -340,7 +340,7 @@ impl RelError<f64, f32> for f32 {
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsError<f32, f32> for f64 {
     fn abs_error(&self, expected: &f32) -> ApproEqResult<f32> {
-        Ok(Some(((self - *expected as f64).abs() as f32)))
+        Ok(Some((self - *expected as f64).abs() as f32))
     }
 }
 
