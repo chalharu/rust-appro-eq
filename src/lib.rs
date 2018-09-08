@@ -27,7 +27,6 @@
 
 #![cfg_attr(feature = "docs", feature(staged_api))]
 #![cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-#![cfg_attr(feature = "i128", feature(i128_type))]
 
 #[cfg(feature = "num-complex")]
 extern crate num_complex;
@@ -387,10 +386,7 @@ macro_rules! itype_impls {
     }
 }
 
-itype_impls! { i8 i16 i32 i64 }
-
-#[cfg(feature = "i128")]
-itype_impls! { i128 }
+itype_impls! { i8 i16 i32 i64 i128 }
 
 macro_rules! utype_impls {
     ($($T:ty)+) => {
@@ -423,10 +419,7 @@ macro_rules! utype_impls {
     }
 }
 
-utype_impls! { u8 u16 u32 u64 }
-
-#[cfg(feature = "i128")]
-utype_impls! { u128 }
+utype_impls! { u8 u16 u32 u64 u128 }
 
 fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(
     iter: T,

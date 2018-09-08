@@ -29,5 +29,3 @@ assert_appro_eq!(1f64, 2f64); // panics
 - **`rational`** - Implement `ApproEq` traits for `num_rational::Ratio`. This adds a dependency on the `num-rational` crate.
 
 - **`ndarray`** - Implement `ApproEq` traits for `ndarray::ArrayBase`. This adds a dependency on the `ndarray` crate.
-
-- **`i128`** - Implement `ApproEq` traits for `i128` and `u128`. **Available only on Rust nightly channel.**
