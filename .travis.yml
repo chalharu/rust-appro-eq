@@ -38,7 +38,7 @@ before_script:
   fi
 - |
   if [ "$TRAVIS_RUST_VERSION" = "nightly" ]; then
-    export FEATURES="complex rational ndarray i128"
+    export FEATURES="complex rational ndarray"
   else
     export FEATURES="complex rational ndarray"
   fi
