@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "i128", feature(i128_type))]
-
 #[cfg(feature = "num-complex")]
 extern crate num_complex;
 
@@ -320,10 +318,7 @@ macro_rules! type_impls {
     }
 }
 
-type_impls! { i8 i16 i32 i64 u8 u16 u32 u64 }
-
-#[cfg(feature = "i128")]
-type_impls! { i128 u128 }
+type_impls! { i8 i16 i32 i64 u8 u16 u32 u64 i128 u128 }
 
 ok_test_all!(
     compare_with_option_both_some,

@@ -27,7 +27,6 @@
 
 #![cfg_attr(feature = "docs", feature(staged_api))]
 #![cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
-#![cfg_attr(feature = "i128", feature(i128_type))]
 
 #[cfg(feature = "num-complex")]
 extern crate num_complex;
@@ -78,11 +77,11 @@ pub enum ApproEqError {
     NonNumDifference,
     #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
     DividedByZero,
-    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
     Overflow,
-    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
     ComponentError(
-        #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+        #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
         Box<error::Error>
     ),
 }
@@ -125,15 +124,15 @@ pub trait AbsError<Rhs: ?Sized = Self, Diff = Self> {
     fn abs_error(&self, expected: &Rhs) -> ApproEqResult<Diff>;
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 pub trait AbsTolerance<Diff = Self> {
-    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
     fn abs_tolerance() -> Diff;
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 pub trait RelTolerance<Diff = Self> {
-    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+    #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
     fn rel_tolerance() -> Diff;
 }
 
@@ -143,14 +142,14 @@ pub trait Tolerance<Diff = Self> {
     fn tolerance() -> Diff;
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl<Diff: Tolerance<Diff>> AbsTolerance<Diff> for Diff {
     fn abs_tolerance() -> Diff {
         Diff::tolerance()
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl<Diff: Tolerance<Diff>> RelTolerance<Diff> for Diff {
     fn rel_tolerance() -> Diff {
         Diff::tolerance()
@@ -387,10 +386,7 @@ macro_rules! itype_impls {
     }
 }
 
-itype_impls! { i8 i16 i32 i64 }
-
-#[cfg(feature = "i128")]
-itype_impls! { i128 }
+itype_impls! { i8 i16 i32 i64 i128 }
 
 macro_rules! utype_impls {
     ($($T:ty)+) => {
@@ -423,10 +419,7 @@ macro_rules! utype_impls {
     }
 }
 
-utype_impls! { u8 u16 u32 u64 }
-
-#[cfg(feature = "i128")]
-utype_impls! { u128 }
+utype_impls! { u8 u16 u32 u64 u128 }
 
 fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(
     iter: T,
@@ -627,7 +620,7 @@ impl<A: ?Sized, D: PartialOrd, B: RelError<A, D> + ?Sized> RelError<RefCell<A>, 
 }
 
 /// absolute tolerance is 1s for Duration
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsTolerance for Duration {
     fn abs_tolerance() -> Duration {
         Duration::new(1, 0) // 1s
@@ -635,21 +628,21 @@ impl AbsTolerance for Duration {
 }
 
 /// relative tolerance is 1ms(1/1000) for Duration
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl RelTolerance for Duration {
     fn rel_tolerance() -> Duration {
         Duration::new(0, 1000000) // 1ms (1/1000)
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsError<Instant, Duration> for Instant {
     fn abs_error(&self, expected: &Instant) -> ApproEqResult<Duration> {
         Ok(Some(if *self > *expected { *self - *expected } else { *expected - *self }))
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsError<SystemTime, Duration> for SystemTime {
     fn abs_error(&self, expected: &SystemTime) -> ApproEqResult<Duration> {
         match if *self > *expected { self.duration_since(*expected) } else { expected.duration_since(*self) } {
@@ -659,14 +652,14 @@ impl AbsError<SystemTime, Duration> for SystemTime {
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl AbsError for Duration {
     fn abs_error(&self, expected: &Duration) -> ApproEqResult<Duration> {
         Ok(Some(if *self > *expected { *self - *expected } else { *expected - *self }))
     }
 }
 
-#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.2.0"))]
+#[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl RelError for Duration {
     fn rel_error(&self, expected: &Duration) -> ApproEqResult<Duration> {
         if *expected == Duration::new(0, 0) {
