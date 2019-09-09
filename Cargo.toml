@@ -1,6 +1,6 @@
 [package]
 name = "appro-eq"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Mitsuharu Seki <mitsu1986@gmail.com>"]
 repository = "https://github.com/chalharu/rust-appro-eq"
 keywords = ["assert", "array"]
@@ -8,6 +8,7 @@ license = "MPL-2.0"
 readme = "README.md"
 description = "Approximately equal traits and assertion"
 documentation = "https://docs.rs/appro-eq/"
+edition = "2018"
 
 [lib]
 name = "appro_eq"

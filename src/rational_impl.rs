@@ -3,14 +3,14 @@
 //! version 2.0 (the "License"). You can obtain a copy of the License at
 //! http://mozilla.org/MPL/2.0/.
 
-use num_rational::Ratio;
+use crate::AbsError;
+use crate::ApproEqError;
+use crate::ApproEqResult;
+use crate::RelError;
+use crate::Tolerance;
 use num_integer::Integer;
+use num_rational::Ratio;
 use num_traits::identities::Zero;
-use AbsError;
-use RelError;
-use ApproEqResult;
-use ApproEqError;
-use Tolerance;
 
 #[cfg_attr(feature = "docs", stable(feature = "num-rational", since = "0.1.0"))]
 impl<A: Integer + Clone> Tolerance for Ratio<A> {
