@@ -8,6 +8,7 @@ license = "MPL-2.0"
 readme = "README.md"
 description = "Approximately equal traits and assertion"
 documentation = "https://docs.rs/appro-eq/"
+edition = "2018"
 
 [lib]
 name = "appro_eq"

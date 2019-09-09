@@ -27,16 +27,23 @@
 #[macro_export]
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 macro_rules! assert_appro_eq {
-    ($a:expr, $b:expr) => ({
-        assert!($crate::AbsApproEq::abs_appro_eq(&$a, &$b),
-                "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`)",
-                 $a, $b);
-    });
-    ($a:expr, $b:expr, $eps:expr) => ({
-        assert!($crate::AbsApproEqWithTol::abs_appro_eq_with_tol(&$a, &$b, &$eps),
-                "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`, eps: `{:?}`)",
-                 $a, $b, $eps);
-    })
+    ($a:expr, $b:expr) => {{
+        assert!(
+            $crate::AbsApproEq::abs_appro_eq(&$a, &$b),
+            "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`)",
+            $a,
+            $b
+        );
+    }};
+    ($a:expr, $b:expr, $eps:expr) => {{
+        assert!(
+            $crate::AbsApproEqWithTol::abs_appro_eq_with_tol(&$a, &$b, &$eps),
+            "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`, eps: `{:?}`)",
+            $a,
+            $b,
+            $eps
+        );
+    }};
 }
 
 /// Asserts that the absolute error of the two expressions is small enough.
@@ -63,16 +70,23 @@ macro_rules! assert_appro_eq {
 #[macro_export]
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 macro_rules! assert_appro_eq_abs {
-    ($a:expr, $b:expr) => ({
-        assert!($crate::AbsApproEq::abs_appro_eq(&$a, &$b),
-                "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`)",
-                 $a, $b);
-    });
-    ($a:expr, $b:expr, $eps:expr) => ({
-        assert!($crate::AbsApproEqWithTol::abs_appro_eq_with_tol(&$a, &$b, &$eps),
-                "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`, eps: `{:?}`)",
-                 $a, $b, $eps);
-    })
+    ($a:expr, $b:expr) => {{
+        assert!(
+            $crate::AbsApproEq::abs_appro_eq(&$a, &$b),
+            "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`)",
+            $a,
+            $b
+        );
+    }};
+    ($a:expr, $b:expr, $eps:expr) => {{
+        assert!(
+            $crate::AbsApproEqWithTol::abs_appro_eq_with_tol(&$a, &$b, &$eps),
+            "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`, eps: `{:?}`)",
+            $a,
+            $b,
+            $eps
+        );
+    }};
 }
 
 /// Asserts that the relative error of the two expressions is small enough.
@@ -99,16 +113,23 @@ macro_rules! assert_appro_eq_abs {
 #[macro_export]
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 macro_rules! assert_appro_eq_rel {
-    ($a:expr, $b:expr) => ({
-        assert!($crate::RelApproEq::rel_appro_eq(&$a, &$b),
-                "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`)",
-                 $a, $b);
-    });
-    ($a:expr, $b:expr, $eps:expr) => ({
-        assert!($crate::RelApproEqWithTol::rel_appro_eq_with_tol(&$a, &$b, &$eps),
-                "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`, eps: `{:?}`)",
-                 $a, $b, $eps);
-    })
+    ($a:expr, $b:expr) => {{
+        assert!(
+            $crate::RelApproEq::rel_appro_eq(&$a, &$b),
+            "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`)",
+            $a,
+            $b
+        );
+    }};
+    ($a:expr, $b:expr, $eps:expr) => {{
+        assert!(
+            $crate::RelApproEqWithTol::rel_appro_eq_with_tol(&$a, &$b, &$eps),
+            "assertion failed: `(left == right)` (left: `{:?}` , right: `{:?}`, eps: `{:?}`)",
+            $a,
+            $b,
+            $eps
+        );
+    }};
 }
 
 /// Asserts that two expressions are approximately equal to each other.

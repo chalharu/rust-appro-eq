@@ -3,11 +3,11 @@
 //! version 2.0 (the "License"). You can obtain a copy of the License at
 //! http://mozilla.org/MPL/2.0/.
 
+use crate::AbsError;
+use crate::ApproEqError;
+use crate::ApproEqResult;
+use crate::RelError;
 use ndarray::{ArrayBase, Axis, Data, Dimension};
-use AbsError;
-use RelError;
-use ApproEqResult;
-use ApproEqError;
 
 fn max<D: PartialOrd, T: Iterator<Item = ApproEqResult<D>>>(iter: T) -> ApproEqResult<D> {
     iter.fold(Ok(None), move |m, i| {
@@ -42,11 +42,10 @@ where
             }
         }
 
-        max(
-            self.iter()
-                .zip(expected.iter())
-                .map(move |(i, j)| i.abs_error(j)),
-        )
+        max(self
+            .iter()
+            .zip(expected.iter())
+            .map(move |(i, j)| i.abs_error(j)))
     }
 }
 
@@ -65,10 +64,9 @@ where
             }
         }
 
-        max(
-            self.iter()
-                .zip(expected.iter())
-                .map(move |(i, j)| i.rel_error(j)),
-        )
+        max(self
+            .iter()
+            .zip(expected.iter())
+            .map(move |(i, j)| i.rel_error(j)))
     }
 }

@@ -1,12 +1,3 @@
-#[cfg(feature = "num-complex")]
-extern crate num_complex;
-
-#[cfg(feature = "ndarray")]
-extern crate ndarray;
-
-#[cfg(feature = "num-rational")]
-extern crate num_rational;
-
 #[macro_use]
 extern crate appro_eq;
 
@@ -17,11 +8,11 @@ use num_complex::Complex;
 use num_rational::Rational;
 
 #[cfg(feature = "ndarray")]
-use ndarray::{ArrayD, IxDyn, arr1, arr2, arr3};
+use ndarray::{arr1, arr2, arr3, ArrayD, IxDyn};
 
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
-use std::cell::{Cell, RefCell};
 use std::time::{Duration, Instant, SystemTime};
 
 macro_rules! panic_test_rel {
@@ -391,7 +382,6 @@ panic_test_all!(
 ok_test_all!(compare_with_cell, Cell::new(1.0), Cell::new(1.0));
 panic_test_all!(bad_compare_with_cell, Cell::new(1.0), Cell::new(1.00001));
 
-
 ok_test_all!(compare_with_refcell, RefCell::new(1.0), RefCell::new(1.0));
 panic_test_all!(
     bad_compare_with_refcell,
@@ -445,13 +435,7 @@ panic_test_all!(
 panic_test_all!(
     bad_compare_with_ndarray2d_len,
     arr2(&[[1f64, 2.0, 3.0, 4.0, 5.0], [6.0, 7.0, 8.0, 9.0, 10.0]]),
-    arr2(&[
-        [1f64, 2.0],
-        [3.0, 4.0],
-        [5.0, 6.0],
-        [7.0, 8.0],
-        [9.0, 10.0]
-    ])
+    arr2(&[[1f64, 2.0], [3.0, 4.0], [5.0, 6.0], [7.0, 8.0], [9.0, 10.0]])
 );
 
 #[cfg(feature = "ndarray")]
