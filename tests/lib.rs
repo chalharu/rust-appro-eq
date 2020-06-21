@@ -167,7 +167,7 @@ ok_test_all!(
 ok_test_all!(
     it_should_not_panic_if_values_are_appro_equal_f64,
     1e-12f64 + 1e-25,
-    1e-12 as f64
+    1e-12_f64
 );
 ok_test_all!(compare_with_explicit_eps, 3f64, 4f64, 2f64);
 
@@ -297,46 +297,61 @@ panic_test_all!(
     Complex::new(1.0f64, 1e-8)
 );
 
-macro_rules! type_impls {
+macro_rules! type_unsigned_impls {
     ($($T:ident)+) => {
         $(
             mod $T {
-                ok_test_all!(it_should_not_panic_if_values_are_appro_equal, 1 as $T, 1 as $T);
-                panic_test_all!(it_should_panic_if_values_are_not_appro_equal, 0 as $T, 1 as $T);
-                panic_test_rel!(it_should_panic_if_values_are_rel_div_zero, 1 as $T, 0 as $T);
+                use core::$T;
+                ok_test_all!(it_should_not_panic_if_values_are_appro_equal, $T::from(1_u8), $T::from(1_u8));
+                panic_test_all!(it_should_panic_if_values_are_not_appro_equal, $T::from(0_u8), $T::from(1_u8));
+                panic_test_rel!(it_should_panic_if_values_are_rel_div_zero, $T::from(1_u8), $T::from(0_u8));
             }
         )+
     }
 }
 
-type_impls! { i8 i16 i32 i64 u8 u16 u32 u64 i128 u128 }
+macro_rules! type_signed_impls {
+    ($($T:ident)+) => {
+        $(
+            mod $T {
+                use core::$T;
+                ok_test_all!(it_should_not_panic_if_values_are_appro_equal, $T::from(1_i8), $T::from(1_i8));
+                panic_test_all!(it_should_panic_if_values_are_not_appro_equal, $T::from(0_i8), $T::from(1_i8));
+                panic_test_rel!(it_should_panic_if_values_are_rel_div_zero, $T::from(1_i8), $T::from(0_i8));
+            }
+        )+
+    }
+}
+
+type_signed_impls! { i8 i16 i32 i64 i128 }
+type_unsigned_impls! { u8 u16 u32 u64 u128 }
 
 ok_test_all!(
     compare_with_option_both_some,
-    Option::Some(1f64),
-    Option::Some(1.0 + 1e-12)
+    Some(1f64),
+    Some(1.0 + 1e-12)
 );
 
 ok_test_all!(
     compare_with_option_both_none,
-    Option::None as Option<f64>,
-    Option::None as Option<f64>
+    Option::<f64>::None,
+    Option::<f64>::None
 );
 
 panic_test_all!(
     bad_compare_with_option_both_some,
-    Option::Some(2f64),
-    Option::Some(1f64)
+    Some(2f64),
+    Some(1f64)
 );
 panic_test_all!(
     bad_compare_with_option_left_some,
-    Option::Some(2f64),
-    Option::None as Option<f64>
+    Some(2f64),
+    Option::<f64>::None
 );
 panic_test_all!(
     bad_compare_with_option_right_some,
-    Option::None as Option<f64>,
-    Option::Some(1f64)
+    Option::<f64>::None,
+    Some(1f64)
 );
 
 #[cfg(feature = "num-rational")]

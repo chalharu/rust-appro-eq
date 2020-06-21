@@ -73,23 +73,19 @@ pub enum ApproEqError {
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl fmt::Display for ApproEqError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", error::Error::description(self))
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ApproEqError::LengthMismatch => write!(f, "length mismatch"),
+            ApproEqError::NonNumDifference => write!(f, "non num difference"),
+            ApproEqError::DividedByZero => write!(f, "divided by zero"),
+            ApproEqError::Overflow => write!(f, "overflow"),
+            ApproEqError::ComponentError(ref err) => write!(f, "{}", err),
+        }
     }
 }
 
 #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
 impl error::Error for ApproEqError {
-    fn description(&self) -> &str {
-        match self {
-            ApproEqError::LengthMismatch => "length mismatch",
-            ApproEqError::NonNumDifference => "non num difference",
-            ApproEqError::DividedByZero => "divided by zero",
-            ApproEqError::Overflow => "overflow",
-            ApproEqError::ComponentError(ref err) => err.description(),
-        }
-    }
-
     fn cause(&self) -> Option<&dyn error::Error> {
         None
     }
@@ -362,7 +358,7 @@ macro_rules! itype_impls {
             #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
             impl RelError for $T {
                 fn rel_error(&self, expected: &$T) -> ApproEqResult<$T> {
-                    if *expected == 0 as $T {
+                    if *expected == 0 {
                         Err(ApproEqError::DividedByZero)
                     } else {
                         Ok(Some((self - expected).abs() / expected))
@@ -395,7 +391,7 @@ macro_rules! utype_impls {
             #[cfg_attr(feature = "docs", stable(feature = "default", since = "0.1.0"))]
             impl RelError for $T {
                 fn rel_error(&self, expected: &$T) -> ApproEqResult<$T> {
-                    if *expected == 0 as $T {
+                    if *expected == 0 {
                         Err(ApproEqError::DividedByZero)
                     } else {
                         Ok(Some((if *self > *expected { *self - *expected } else { *expected - *self }) / expected))
@@ -644,7 +640,7 @@ impl AbsError<SystemTime, Duration> for SystemTime {
         } {
             Ok(v) => Ok(Some(v)),
             Err(e) => Err(ApproEqError::ComponentError(
-                Box::new(e) as Box<dyn error::Error>
+                Box::new(e)
             )),
         }
     }
