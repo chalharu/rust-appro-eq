@@ -17,23 +17,23 @@ test = true
 
 [dependencies.num-complex]
 optional = true
-version = ">=0.0.0"
+version = "=0.4.6"
 
 [dependencies.num-rational]
 optional = true
-version = ">=0.0.0"
+version = "=0.4.2"
 
 [dependencies.num-integer]
 optional = true
-version = ">=0.0.0"
+version = "=0.1.46"
 
 [dependencies.num-traits]
 optional = true
-version = ">=0.0.0"
+version = "=0.2.19"
 
 [dependencies.ndarray]
 optional = true
-version = ">=0.0.0"
+version = "=0.17.2"
 
 [features]
 docs = ["complex", "rational", "ndarray"]
